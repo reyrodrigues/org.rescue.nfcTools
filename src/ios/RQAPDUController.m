@@ -15,6 +15,7 @@
         NSString * authKeyCommand;
         NSString * defaultKey;
         NSTimer* timeoutTimer;
+        NSString * _callbackId;
 
         BOOL timedOut;
         BOOL shuttingDown;
@@ -56,6 +57,13 @@
         [self executeCommands:[NSArray arrayWithObjects:key,
                                @"FFCA000000",
                                nil]];
+        _callbackId = [command callbackId];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK
+                                   messageAsString:@"IGNORE"];
+
+        [result setKeepCallback:[NSNumber numberWithBool:YES]];
+        [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
 }
 
 // Read the 128B from the card
@@ -75,6 +83,15 @@
                                @"FF B0 00 10 10",
                                @"FF B0 00 11 10",
                                nil]];
+
+
+        _callbackId = [command callbackId];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK
+                                   messageAsString:@"IGNORE"];
+
+        [result setKeepCallback:[NSNumber numberWithBool:YES]];
+        [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
 }
 
 // Writes up to 128B to the card
@@ -100,6 +117,15 @@
                                [NSString stringWithFormat:authCommand, @"10"],
                                commandString3,
                                nil]];
+
+
+        _callbackId = [command callbackId];
+        CDVPluginResult* result = [CDVPluginResult
+                                   resultWithStatus:CDVCommandStatus_OK
+                                   messageAsString:@"IGNORE"];
+
+        [result setKeepCallback:[NSNumber numberWithBool:YES]];
+        [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
 }
 
 -(void)executeCommands:(NSArray*)commands
@@ -132,6 +158,7 @@
                         selector:@selector(operationTimedOut)
                         userInfo:nil
                         repeats:NO];
+
 }
 
 -(void)operationTimedOut {
@@ -178,7 +205,7 @@
         }
         [timeoutTimer invalidate];
         NSData* responseData = [AJDHex byteArrayFromHexString:response];
-        NSString* javascriptArray = [self dataToJavascriptByteArray:responseData];
+        NSString* javascriptArray = [response stringByReplacingOccurrencesOfString:@" " withString:@""];
 
         shuttingDown = YES;
         [_reader piccPowerOff];
@@ -188,14 +215,14 @@
 
         dispatch_async(dispatch_get_main_queue(), ^{
                                if (timedOut) {
-
-                                       NSString* functionCall = [NSString stringWithFormat:@"%@.timedOutCallback();", @"RQAPDUController" ];
-                                       [self.webView stringByEvaluatingJavaScriptFromString:functionCall];
                                }
                                else {
-                                       NSString* functionCall = [NSString stringWithFormat:@"%@.executeCallback([%@]);", @"RQAPDUController",
-                                                                 javascriptArray];
-                                       [self.webView stringByEvaluatingJavaScriptFromString:functionCall];
+                                       CDVPluginResult* result = [CDVPluginResult
+                                                                  resultWithStatus:CDVCommandStatus_OK
+                                                                  messageAsString:javascriptArray];
+
+
+                                       [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
                                }
 
                        });
