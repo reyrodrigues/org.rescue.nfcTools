@@ -1,71 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin id="org.rescue.nfcCardPlugin" version="0.7.0" xmlns="http://www.phonegap.com/ns/plugins/1.0">
 
- <name>Hello</name>
+    <name>Cordova NFC Tools</name>
 
- <engines>
-  <engine name="cordova" version=">=3.4.0"/>
-  </engines>
+    <engines>
+        <engine name="cordova" version=">=3.4.0"/>
+        </engines>
 
-  <asset src="www/hello.js" target="js/hello.js"/>
-  <asset src="www/RQAPDUController.js" target="js/RQAPDUController.js"/>
+        <asset  src="www/nfcTools.js" target="js/nfcTools.js"/>
 
-  <js-module name="hello" src="www/hello.js">
-   <clobbers target="hello"/>
-  </js-module>
+        <js-module name="nfcTools" src="www/nfcTools.js">
+            <clobbers  target="nfcTools"/>
+        </js-module>
+        <platform name="android">
 
-  <js-module name="RQAPDUController" src="www/RQAPDUController.js">
-   <clobbers target="RQAPDUController"/>
-  </js-module>
-  <platform name="android">
+            <config-file parent="/manifest" target="AndroidManifest.xml">
+                <uses-permission  android:name="android.permission.RECORD_AUDIO"/>
+                <uses-permission  android:name="android.permission.NFC"/>
+                <uses-feature  android:name="android.hardware.nfc" android:required="false"/>
+            </config-file>
 
-   <config-file parent="/manifest" target="AndroidManifest.xml">
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-   </config-file>
+            <config-file parent="/*" target="res/xml/config.xml">
+                <feature name="ACR35Controller">
+                    <param  name="android-package" value="org.rescue.nfcTools.ACR35Controller"/>
+                </feature>
+            </config-file>
 
-   <config-file parent="/*" target="res/xml/config.xml">
-    <feature name="RQAPDUController">
-     <param name="android-package" value="org.rescue.nfcTools.APDUController"/>
-    </feature>
-   </config-file>
+            <source-file  src="src/android/ACR35Controller.java" target-dir="src/org/rescue/nfcTools"/>
+            <source-file  framework="true" src="src/android/acsaj-1.0.0.jar" target-dir="libs"/>
+        </platform>
 
-   <source-file src="src/android/APDUController.java" target-dir="src/org/rescue/nfcTools"/>
-   <source-file framework="true" src="src/android/acsaj-1.0.0.jar" target-dir="libs"/>
-  </platform>
+        <platform name="ios">
+            <config-file parent="/widget" target="config.xml">
+                <feature name="ACR35Controller">
+                    <param  name="ios-package" value="RQACR35Controller"/>
+                </feature>
+            </config-file>
 
-  <platform name="ios">
-   <config-file parent="/widget" target="config.xml">
-    <feature name="RQAPDUController">
-     <param name="ios-package" value="RQAPDUController"/>
-    </feature>
-   </config-file>
+            <header-file  src="src/ios/AudioJack/Dummy.mm" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRAesTrackData.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRAudioJackReader.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRCRC16.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRDukptReceiver.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRDukptTrackData.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRResult.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRStatus.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRTrack1Data.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRTrack2Data.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/ACRTrackData.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/AJDHex.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/AudioJack.h" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/AudioJack/AudioJackErrors.h" target-dir="NFCPlugin/AudioJack"/>
+            <source-file  src="src/ios/AudioJack/AJDHex.m" target-dir="NFCPlugin/AudioJack"/>
 
-   <header-file src="src/ios/AudioJack/Dummy.mm" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRAesTrackData.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRAudioJackReader.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRCRC16.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRDukptReceiver.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRDukptTrackData.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRResult.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRStatus.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRTrack1Data.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRTrack2Data.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/ACRTrackData.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/AJDHex.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/AudioJack.h" target-dir="NFCPlugin/AudioJack"/>
-   <header-file src="src/ios/AudioJack/AudioJackErrors.h" target-dir="NFCPlugin/AudioJack"/>
-   <source-file src="src/ios/AudioJack/AJDHex.m" target-dir="NFCPlugin/AudioJack"/>
+            <header-file  src="src/ios/RQACR35Controller.h" target-dir="NFCPlugin"/>
+            <source-file  src="src/ios/RQACR35Controller.m" target-dir="NFCPlugin"/>
 
-   <header-file src="src/ios/RQAPDUController.h" target-dir="NFCPlugin"/>
-   <source-file src="src/ios/RQAPDUController.m" target-dir="NFCPlugin"/>
+            <source-file  framework='true' src="src/ios/AudioJack/libAudioJack.a" target-dir="NFCPlugin/AudioJack"/>
+            <framework  src="AudioToolbox.framework"/>
+            <framework  src="libc++.dylib"/>
+        </platform>
 
-   <source-file framework='true' src="src/ios/AudioJack/libAudioJack.a" target-dir="NFCPlugin/AudioJack"/>
-   <framework src="AudioToolbox.framework"/>
-   <framework src="libc++.dylib"/>
-  </platform>
+        <platform name="wp7"></platform>
 
-  <platform name="wp7">
-   <source-file src="src/wp7/Hello.cs"/>
-  </platform>
-
- </plugin>
+    </plugin>

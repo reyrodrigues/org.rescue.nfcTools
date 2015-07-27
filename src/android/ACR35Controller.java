@@ -39,6 +39,8 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import android.nfc.*;
+
 import org.apache.cordova.*;
 
 import java.io.UnsupportedEncodingException;
@@ -52,14 +54,15 @@ import java.lang.StringBuffer;
 import java.lang.System;
 import java.io.*;
 
-public class APDUController extends CordovaPlugin {
+public class ACR35Controller extends CordovaPlugin {
     private AudioJackReader reader;
     private final String TAG = "MYAPP";
     private AudioManager am = null;
     private Timer timer = null;
+    public boolean timedOut = false;
     private CallbackContext callbackContext;
 
-    public APDUController() {
+    public ACR35Controller() {
 
     }
 
@@ -88,12 +91,15 @@ public class APDUController extends CordovaPlugin {
         }, filter);
 
         final StringBuffer buffer = new StringBuffer();
+        final StringBuffer atrBuffer = new StringBuffer();
 
 
         reader.setOnPiccAtrAvailableListener(new AudioJackReader.OnPiccAtrAvailableListener() {
             @Override
             public void onPiccAtrAvailable(AudioJackReader audioJackReader, byte[] bytes) {
                 Log.w(TAG, bytesToHex(bytes));
+
+                atrBuffer.append(bytesToHex(bytes));
             }
         });
 
@@ -117,19 +123,30 @@ public class APDUController extends CordovaPlugin {
         reader.setOnResultAvailableListener(new AudioJackReader.OnResultAvailableListener() {
             @Override
             public void onResultAvailable(AudioJackReader audioJackReader, Result result) {
-                reader.sleep();
+                //reader.sleep();
                 timer.cancel();
 
                 final String stringResult = buffer.toString();
+                final String atrResult = atrBuffer.toString();
 
                 cordova.getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        PluginResult dataResult = new PluginResult(PluginResult.Status.OK,  stringResult.replaceAll("\\s", ""));
-                        callbackContext.sendPluginResult(dataResult);
+                        if(timedOut) {
+                            PluginResult dataResult = new PluginResult(PluginResult.Status.OK,  "TIMEDOUT");
+                            callbackContext.sendPluginResult(dataResult);
+                        } else {
+                            JSONArray resultArray = new JSONArray();
+                            resultArray.put(stringResult.replaceAll("\\s", ""));
+                            resultArray.put(atrResult.replaceAll("\\s", ""));
+
+                            PluginResult dataResult = new PluginResult(PluginResult.Status.OK,  resultArray);
+                            callbackContext.sendPluginResult(dataResult);
+                        }
                     }
                 });
                 buffer.delete(0, buffer.length());
+                atrBuffer.delete(0, atrBuffer.length());
             }
         });
     }
@@ -138,6 +155,7 @@ public class APDUController extends CordovaPlugin {
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
         am.setStreamVolume(AudioManager.STREAM_MUSIC, am.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
         this.callbackContext = callbackContext;
+        timedOut = false;
 
         Log.w(TAG, action);
 
@@ -172,7 +190,7 @@ public class APDUController extends CordovaPlugin {
                 String dataString = data.get(0).toString();
                 byte[] dataToWrite = new byte[128];
                 Arrays.fill(dataToWrite, (byte)0);
-                byte[] dataBytes = dataString.getBytes("UTF-8");
+                byte[] dataBytes = hexToBytes(dataString);
                 System.arraycopy(dataBytes, 0, dataToWrite, 0, dataBytes.length);
 
                 String dataStringToWrite = bytesToHex(dataToWrite).replaceAll("\\s","");
@@ -204,6 +222,7 @@ public class APDUController extends CordovaPlugin {
 
 
     private void executeAPDUCommands(final byte[][] commands) {
+        final ACR35Controller self = this;
         cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
@@ -228,7 +247,7 @@ public class APDUController extends CordovaPlugin {
                 calendar.add(Calendar.SECOND, 15);
 
                 timer = new Timer();
-                timer.schedule(new TimeoutClass(reader), calendar.getTime());
+                timer.schedule(new TimeoutClass(reader, self), calendar.getTime());
             }
         });
     }
@@ -300,21 +319,27 @@ public class APDUController extends CordovaPlugin {
     }
 
     private class TimeoutClass extends TimerTask {
+        private ACR35Controller controller;
         private AudioJackReader reader;
 
-        public TimeoutClass(AudioJackReader reader) {
+        public TimeoutClass(AudioJackReader reader, ACR35Controller controller) {
             this.reader = reader;
+            this.controller = controller;
         }
 
         @Override
         public void run() {
             Log.w("Timing out", "Timing out");
+            this.controller.timedOut = true;
+
+            PluginResult dataResult = new PluginResult(PluginResult.Status.OK,  "TIMEDOUT");
+            callbackContext.sendPluginResult(dataResult);
 
             reader.reset(new AudioJackReader.OnResetCompleteListener() {
                 @Override
                 public void onResetComplete(AudioJackReader audioJackReader) {
 
-                    reader.sleep();
+                    //reader.sleep();
                 }
             });
         }

@@ -1,11 +1,11 @@
 
-#import "RQAPDUController.h"
+#import "RQACR35Controller.h"
 #import <CommonCrypto/CommonCrypto.h>
 #import <AudioToolbox/AudioToolbox.h>
 #import "AJDHex.h"
 
 
-@implementation RQAPDUController {
+@implementation RQACR35Controller {
         ACRAudioJackReader *_reader;
 
         NSCondition* deviceBusy;
@@ -16,6 +16,7 @@
         NSString * defaultKey;
         NSTimer* timeoutTimer;
         NSString * _callbackId;
+        NSString * _atrResult;
 
         BOOL timedOut;
         BOOL shuttingDown;
@@ -98,8 +99,8 @@
 - (void)writeDataIntoTag:(CDVInvokedUrlCommand *)command
 {
         NSString* key = [self prepareKey:command];
-        NSString* dataString = [[command arguments] objectAtIndex:0];
-        NSMutableData* data = [NSMutableData dataWithData: [dataString dataUsingEncoding:NSUTF8StringEncoding]];
+        NSData*  immutableData = [AJDHex byteArrayFromHexString:[[command arguments] objectAtIndex:0]];
+        NSMutableData* data = [NSMutableData dataWithData:immutableData];
         if([data length] <128) {
                 [data increaseLengthBy:128 - [data length]];
         }
@@ -150,7 +151,7 @@
                  }
 
                  [_reader piccPowerOff];
-                 [_reader sleep];
+                 //[_reader sleep];
          }];
 
         timeoutTimer = [NSTimer scheduledTimerWithTimeInterval:timeout
@@ -166,7 +167,12 @@
         timedOut = YES;
         [_reader piccPowerOff];
         [_reader resetWithCompletion:^{
-                 [_reader sleep];
+                 CDVPluginResult* timeOutResult = [CDVPluginResult
+                                                   resultWithStatus:CDVCommandStatus_OK
+                                                   messageAsString:@"TIMEDOUT"];
+
+
+                 [self.commandDelegate sendPluginResult:timeOutResult callbackId:_callbackId];
          }];
 
 }
@@ -177,6 +183,7 @@
 - (void)reader:(ACRAudioJackReader *)reader didSendPiccAtr:(const uint8_t *)atr
         length:(NSUInteger)length {
         NSLog([NSString stringWithFormat:@"ATR: %@", [AJDHex hexStringFromByteArray:[NSData dataWithBytes:atr length:length]]]);
+        _atrResult = [AJDHex hexStringFromByteArray:[NSData dataWithBytes:atr length:length]];
 }
 
 - (void)reader:(ACRAudioJackReader *)reader
@@ -189,6 +196,7 @@
         [result getBytes:resultCode range:(NSMakeRange(length-2, 2))];
         NSString* resultCodeString =[AJDHex hexStringFromByteArray:resultCode length:2];
 
+        NSLog(resultCodeString);
 
         [result replaceBytesInRange:NSMakeRange(length-2, 2) withBytes:NULL length:0];
         NSString* resultString =[AJDHex hexStringFromByteArray:result];
@@ -205,12 +213,13 @@
         }
         [timeoutTimer invalidate];
         NSData* responseData = [AJDHex byteArrayFromHexString:response];
-        NSString* javascriptArray = [response stringByReplacingOccurrencesOfString:@" " withString:@""];
+        NSString* resultString = [response stringByReplacingOccurrencesOfString:@" " withString:@""];
+        NSString* atrResultString = [_atrResult stringByReplacingOccurrencesOfString:@" " withString:@""];
 
         shuttingDown = YES;
         [_reader piccPowerOff];
         [_reader resetWithCompletion:^{
-                 [_reader sleep];
+                 //[_reader sleep];
          }];
 
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -219,7 +228,7 @@
                                else {
                                        CDVPluginResult* result = [CDVPluginResult
                                                                   resultWithStatus:CDVCommandStatus_OK
-                                                                  messageAsString:javascriptArray];
+                                                                  messageAsArray:@[resultString, atrResultString]];
 
 
                                        [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
@@ -254,7 +263,7 @@
 
 static void AJDAudioRouteChangeListener(void *inClientData, AudioSessionPropertyID inID, UInt32 inDataSize, const void *inData) {
 
-        RQAPDUController *viewController = (__bridge RQAPDUController *) inClientData;
+        RQACR35Controller *viewController = (__bridge RQACR35Controller *) inClientData;
 
         // Set mute to YES if the reader is unplugged, otherwise NO.
         viewController->_reader.mute = !AJDIsReaderPlugged();
