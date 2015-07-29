@@ -264,7 +264,7 @@ public class ACR35Controller extends CordovaPlugin {
         return new String(hexChars);
     }
 
-    private byte[] hexToBytes(String hexString) {
+    public static byte[] hexToBytes(String hexString) {
 
         byte[] byteArray = null;
         int count = 0;
