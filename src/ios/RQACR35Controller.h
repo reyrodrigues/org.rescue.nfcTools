@@ -5,6 +5,7 @@
 
 - (void) readIdFromTag:(CDVInvokedUrlCommand*)command;
 - (void) readDataFromTag:(CDVInvokedUrlCommand*)command;
-- (void) writeDataIntoTag:(CDVInvokedUrlCommand *)command;
-
+- (void) writeDataIntoTag:(CDVInvokedUrlCommand*)command;
+- (void) getDeviceStatus:(CDVInvokedUrlCommand*) command;
+- (void) getDeviceId:(CDVInvokedUrlCommand*) command;
 @end

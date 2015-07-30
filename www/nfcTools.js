@@ -9,6 +9,9 @@ module.exports = {
                 if (p === 'TIMEDOUT') {
                     errorCallback.apply(self, arguments);
                 }
+                if (p === 'NOTFOUND') {
+                    errorCallback.apply(self, arguments);
+                }
                 return true;
             },
             errorCallback,
@@ -23,6 +26,9 @@ module.exports = {
                     successCallback.apply(self, arguments);
                 }
                 if (p === 'TIMEDOUT') {
+                    errorCallback.apply(self, arguments);
+                }
+                if (p === 'NOTFOUND') {
                     errorCallback.apply(self, arguments);
                 }
                 return true;
@@ -41,11 +47,52 @@ module.exports = {
                 if (p === 'TIMEDOUT') {
                     errorCallback.apply(self, arguments);
                 }
+                if (p === 'NOTFOUND') {
+                    errorCallback.apply(self, arguments);
+                }
                 return true;
             },
             errorCallback,
             "ACR35Controller",
             "readIdFromTag", []
+        );
+    },
+    acr35GetDeviceStatus: function (successCallback, errorCallback) {
+        var self = this;
+        cordova.exec(function (p) {
+                if (p !== 'IGNORE') {
+                    successCallback.apply(self, arguments);
+                }
+                if (p === 'TIMEDOUT') {
+                    errorCallback.apply(self, arguments);
+                }
+                if (p === 'NOTFOUND') {
+                    errorCallback.apply(self, arguments);
+                }
+                return true;
+            },
+            errorCallback,
+            "ACR35Controller",
+            "getDeviceStatus", []
+        );
+    },
+    acr35GetDeviceId: function (successCallback, errorCallback) {
+        var self = this;
+        cordova.exec(function (p) {
+                if (p !== 'IGNORE') {
+                    successCallback.apply(self, arguments);
+                }
+                if (p === 'TIMEDOUT') {
+                    errorCallback.apply(self, arguments);
+                }
+                if (p === 'NOTFOUND') {
+                    errorCallback.apply(self, arguments);
+                }
+                return true;
+            },
+            errorCallback,
+            "ACR35Controller",
+            "getDeviceId", []
         );
     },
    isoDepReadIdFromTag: function (successCallback, errorCallback) {
@@ -55,6 +102,9 @@ module.exports = {
                     successCallback.apply(self, arguments);
                 }
                 if (p === 'TIMEDOUT') {
+                    errorCallback.apply(self, arguments);
+                }
+                if (p === 'NOTFOUND') {
                     errorCallback.apply(self, arguments);
                 }
                 return true;

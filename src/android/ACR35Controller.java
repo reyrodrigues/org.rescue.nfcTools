@@ -56,11 +56,13 @@ import java.io.*;
 
 public class ACR35Controller extends CordovaPlugin {
     private AudioJackReader reader;
-    private final String TAG = "MYAPP";
+    private final String TAG = "TalonACR35";
     private AudioManager am = null;
     private Timer timer = null;
     public boolean timedOut = false;
+    private boolean mute = false;
     private CallbackContext callbackContext;
+    private int timeOut = 15;
 
     public ACR35Controller() {
 
@@ -70,9 +72,9 @@ public class ACR35Controller extends CordovaPlugin {
 
     public void initialize(final CordovaInterface cordova, final CordovaWebView webView) {
         super.initialize(cordova, webView);
-
         am = (AudioManager) cordova.getActivity().getSystemService(Context.AUDIO_SERVICE);
         reader = new AudioJackReader(am, true);
+
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_HEADSET_PLUG);
@@ -86,6 +88,7 @@ public class ACR35Controller extends CordovaPlugin {
 
                 /* Mute the audio output if the reader is unplugged. */
                     reader.setMute(!plugged);
+                    mute = !plugged;
                 }
             }
         }, filter);
@@ -93,6 +96,7 @@ public class ACR35Controller extends CordovaPlugin {
         final StringBuffer buffer = new StringBuffer();
         final StringBuffer atrBuffer = new StringBuffer();
 
+        reader.setSleepTimeout(30);
 
         reader.setOnPiccAtrAvailableListener(new AudioJackReader.OnPiccAtrAvailableListener() {
             @Override
@@ -120,6 +124,42 @@ public class ACR35Controller extends CordovaPlugin {
             }
         });
 
+        reader.setOnStatusAvailableListener(new AudioJackReader.OnStatusAvailableListener() {
+            @Override
+            public void onStatusAvailable(AudioJackReader audioJackReader, final Status status) {
+                timer.cancel();
+
+                cordova.getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONArray resultArray = new JSONArray();
+                        resultArray.put(Integer.toString(status.getBatteryLevel()));
+                        resultArray.put(Integer.toString(status.getSleepTimeout()));
+
+                        PluginResult dataResult = new PluginResult(PluginResult.Status.OK, resultArray);
+                        callbackContext.sendPluginResult(dataResult);
+                    }
+                });
+            }
+        });
+
+        reader.setOnDeviceIdAvailableListener(new AudioJackReader.OnDeviceIdAvailableListener() {
+            @Override
+            public void onDeviceIdAvailable(AudioJackReader audioJackReader, final byte[] bytes) {
+                //reader.sleep();
+                timer.cancel();
+
+                cordova.getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        PluginResult dataResult = new PluginResult(PluginResult.Status.OK, bytesToHex(bytes));
+                        callbackContext.sendPluginResult(dataResult);
+                    }
+                });
+            }
+        });
+
+
         reader.setOnResultAvailableListener(new AudioJackReader.OnResultAvailableListener() {
             @Override
             public void onResultAvailable(AudioJackReader audioJackReader, Result result) {
@@ -129,18 +169,21 @@ public class ACR35Controller extends CordovaPlugin {
                 final String stringResult = buffer.toString();
                 final String atrResult = atrBuffer.toString();
 
+                Log.i(TAG, "Result Available");
+                Log.i(TAG, stringResult);
+
                 cordova.getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if(timedOut) {
-                            PluginResult dataResult = new PluginResult(PluginResult.Status.OK,  "TIMEDOUT");
+                        if (timedOut) {
+                            PluginResult dataResult = new PluginResult(PluginResult.Status.OK, "TIMEDOUT");
                             callbackContext.sendPluginResult(dataResult);
                         } else {
                             JSONArray resultArray = new JSONArray();
                             resultArray.put(stringResult.replaceAll("\\s", ""));
                             resultArray.put(atrResult.replaceAll("\\s", ""));
 
-                            PluginResult dataResult = new PluginResult(PluginResult.Status.OK,  resultArray);
+                            PluginResult dataResult = new PluginResult(PluginResult.Status.OK, resultArray);
                             callbackContext.sendPluginResult(dataResult);
                         }
                     }
@@ -153,18 +196,62 @@ public class ACR35Controller extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
+        reader.start();
+
         am.setStreamVolume(AudioManager.STREAM_MUSIC, am.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
         this.callbackContext = callbackContext;
         timedOut = false;
 
         Log.w(TAG, action);
+        if (mute) {
+            PluginResult dataResult = new PluginResult(PluginResult.Status.OK, "NOTFOUND");
+            callbackContext.sendPluginResult(dataResult);
+            return true;
+        }
+
+
+        final ACR35Controller self = this;
 
         final String loadKeyCommand = "FF 82 00 00 06 %s";
         final String authCommand = "FF 86 00 00 05 01 00 %s 60 00";
         final String defaultKey = "FF FF FF FF FF FF";
         String authKeyCommand = "FF 86 00 00 05 01 00 00 60 00";
 
-        if(action.equals("readIdFromTag")) {
+        if (action.equals("getDeviceId")) {
+            cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    reader.setMute(false);
+
+                    reader.reset(new AudioJackReader.OnResetCompleteListener() {
+                        @Override
+                        public void onResetComplete(AudioJackReader audioJackReader) {
+                            reader.getDeviceId();
+
+                        }
+                    });
+                }
+            });
+        }
+
+        if (action.equals("getDeviceStatus")) {
+            cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    reader.setMute(false);
+
+                    reader.reset(new AudioJackReader.OnResetCompleteListener() {
+                        @Override
+                        public void onResetComplete(AudioJackReader audioJackReader) {
+                            reader.getStatus();
+
+                        }
+                    });
+                }
+            });
+        }
+
+        if (action.equals("readIdFromTag")) {
             executeAPDUCommands(new byte[][]{
                     hexToBytes("FFCA000000")
             });
@@ -189,14 +276,14 @@ public class ACR35Controller extends CordovaPlugin {
             try {
                 String dataString = data.get(0).toString();
                 byte[] dataToWrite = new byte[128];
-                Arrays.fill(dataToWrite, (byte)0);
+                Arrays.fill(dataToWrite, (byte) 0);
                 byte[] dataBytes = hexToBytes(dataString);
                 System.arraycopy(dataBytes, 0, dataToWrite, 0, dataBytes.length);
 
-                String dataStringToWrite = bytesToHex(dataToWrite).replaceAll("\\s","");
-                String commandString1 = "FF D6 00 04 30"+ dataStringToWrite.substring(0, 95);
-                String commandString2 = "FF D6 00 08 30"+ dataStringToWrite.substring(96, (96*2)-1);
-                String commandString3 = "FF D6 00 10 20"+ dataStringToWrite.substring(96*2, (96*2+64)-1);
+                String dataStringToWrite = bytesToHex(dataToWrite).replaceAll("\\s", "");
+                String commandString1 = "FF D6 00 04 30" + dataStringToWrite.substring(0, 95);
+                String commandString2 = "FF D6 00 08 30" + dataStringToWrite.substring(96, (96 * 2) - 1);
+                String commandString3 = "FF D6 00 10 20" + dataStringToWrite.substring(96 * 2, (96 * 2 + 64) - 1);
 
                 Log.w(TAG, dataStringToWrite);
                 executeAPDUCommands(new byte[][]{
@@ -213,6 +300,13 @@ public class ACR35Controller extends CordovaPlugin {
             }
         }
 
+
+        Calendar calendar = Calendar.getInstance(); // gets a calendar using the default time zone and locale.
+        calendar.add(Calendar.SECOND, timeOut);
+
+        timer = new Timer();
+        timer.schedule(new TimeoutClass(reader, self), calendar.getTime());
+
         PluginResult dataResult = new PluginResult(PluginResult.Status.OK, "IGNORE");
         dataResult.setKeepCallback(true);
 
@@ -222,32 +316,28 @@ public class ACR35Controller extends CordovaPlugin {
 
 
     private void executeAPDUCommands(final byte[][] commands) {
-        final ACR35Controller self = this;
+        reader.sleep();
+
         cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
                 reader.setMute(false);
-                reader.start();
 
                 reader.reset(new AudioJackReader.OnResetCompleteListener() {
                     @Override
                     public void onResetComplete(AudioJackReader audioJackReader) {
 
-                        if (!reader.piccPowerOn(10, 0x8F))
+                        if (!reader.piccPowerOn(5, 0x8F))
                             Log.w(TAG, "Error");
-                        for (byte[] command: commands) {
-                            reader.piccTransmit(10, command);
+                        for (byte[] command : commands) {
+                            reader.piccTransmit(5, command);
                         }
 
                         reader.piccPowerOff();
 
                     }
                 });
-                Calendar calendar = Calendar.getInstance(); // gets a calendar using the default time zone and locale.
-                calendar.add(Calendar.SECOND, 15);
 
-                timer = new Timer();
-                timer.schedule(new TimeoutClass(reader, self), calendar.getTime());
             }
         });
     }
@@ -332,7 +422,7 @@ public class ACR35Controller extends CordovaPlugin {
             Log.w("Timing out", "Timing out");
             this.controller.timedOut = true;
 
-            PluginResult dataResult = new PluginResult(PluginResult.Status.OK,  "TIMEDOUT");
+            PluginResult dataResult = new PluginResult(PluginResult.Status.OK, "TIMEDOUT");
             callbackContext.sendPluginResult(dataResult);
 
             reader.reset(new AudioJackReader.OnResetCompleteListener() {

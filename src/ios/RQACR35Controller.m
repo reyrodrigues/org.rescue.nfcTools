@@ -17,13 +17,17 @@
         NSTimer* timeoutTimer;
         NSString * _callbackId;
         NSString * _atrResult;
+        NSUInteger timeout;
 
         BOOL timedOut;
         BOOL shuttingDown;
+
 }
 
 - (void)pluginInitialize {
         NSLog(@"Initiaizing plugin");
+
+        timeout = 10;
 
         _reader = [[ACRAudioJackReader alloc] initWithMute:YES];
         [_reader setDelegate:self];
@@ -52,6 +56,80 @@
         return [NSString stringWithFormat:loadKeyCommand, defaultKey];
 }
 
+
+-(void)getDeviceStatus:(CDVInvokedUrlCommand *)command {
+
+        _callbackId = [command callbackId];
+        [_reader resetWithCompletion:^{
+                 if (![_reader getStatus]) {
+                         NSLog(@"Can't Get Status");
+                 }
+         }];
+
+
+
+        timeoutTimer = [NSTimer scheduledTimerWithTimeInterval:timeout
+                        target:self
+                        selector:@selector(operationTimedOut)
+                        userInfo:nil
+                        repeats:NO];
+
+        if(!_reader.mute) {
+
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"IGNORE"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        } else{
+                [timeoutTimer invalidate];
+
+
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"NOTFOUND"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        }
+}
+
+
+-(void)getDeviceId:(CDVInvokedUrlCommand *)command {
+
+        _callbackId = [command callbackId];
+        [_reader resetWithCompletion:^{
+                 if (![_reader getDeviceId]) {
+                         NSLog(@"Can't Get Device Id");
+                 }
+         }];
+
+
+
+        timeoutTimer = [NSTimer scheduledTimerWithTimeInterval:timeout
+                        target:self
+                        selector:@selector(operationTimedOut)
+                        userInfo:nil
+                        repeats:NO];
+
+
+        if(!_reader.mute) {
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"IGNORE"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        } else{
+                [timeoutTimer invalidate];
+
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"NOTFOUND"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        }
+}
+
+
 -(void)readIdFromTag:(CDVInvokedUrlCommand *)command {
         NSString* key = [self prepareKey:command];
 
@@ -59,12 +137,23 @@
                                @"FFCA000000",
                                nil]];
         _callbackId = [command callbackId];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_OK
-                                   messageAsString:@"IGNORE"];
 
-        [result setKeepCallback:[NSNumber numberWithBool:YES]];
-        [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+
+        if(!_reader.mute) {
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"IGNORE"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        } else{
+                [timeoutTimer invalidate];
+
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"NOTFOUND"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        }
 }
 
 // Read the 128B from the card
@@ -87,12 +176,23 @@
 
 
         _callbackId = [command callbackId];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_OK
-                                   messageAsString:@"IGNORE"];
 
-        [result setKeepCallback:[NSNumber numberWithBool:YES]];
-        [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+
+        if(!_reader.mute) {
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"IGNORE"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        } else{
+                [timeoutTimer invalidate];
+
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"NOTFOUND"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        }
 }
 
 // Writes up to 128B to the card
@@ -121,19 +221,28 @@
 
 
         _callbackId = [command callbackId];
-        CDVPluginResult* result = [CDVPluginResult
-                                   resultWithStatus:CDVCommandStatus_OK
-                                   messageAsString:@"IGNORE"];
 
-        [result setKeepCallback:[NSNumber numberWithBool:YES]];
-        [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        if(!_reader.mute) {
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"IGNORE"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        } else{
+                [timeoutTimer invalidate];
+
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"NOTFOUND"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        }
 }
 
 -(void)executeCommands:(NSArray*)commands
 {
         shuttingDown = NO;
-        timedOut = NO;
-        NSUInteger timeout = 15; // 1 second.
+        timedOut = NO; // 1 second.
         NSUInteger cardType = ACRPiccCardTypeIso14443TypeA |
                               ACRPiccCardTypeIso14443TypeB |
                               ACRPiccCardTypeFelica212kbps |
@@ -177,8 +286,40 @@
 
 }
 
-
 #pragma mark - Audio Jack Reader
+
+
+- (void)reader:(ACRAudioJackReader *)reader didSendDeviceId:(const uint8_t *)deviceId length:(NSUInteger)length {
+        [timeoutTimer invalidate];
+        dispatch_sync(dispatch_get_main_queue(),
+                      ^{
+                              CDVPluginResult* statusResult = [CDVPluginResult
+                                                               resultWithStatus:CDVCommandStatus_OK
+                                                               messageAsString:[AJDHex hexStringFromByteArray:[NSData dataWithBytes:deviceId length:length]]];
+
+
+                              [self.commandDelegate sendPluginResult:statusResult callbackId:_callbackId];
+                      });
+}
+
+- (void)reader:(ACRAudioJackReader *)reader didSendStatus:(ACRStatus *)status {
+
+        [timeoutTimer invalidate];
+        dispatch_sync(dispatch_get_main_queue(),
+                      ^{
+                              // This here is the single ugliest piece of code I've ever been forced to write by a stupid programming language
+                              NSArray* result = @[
+                                      [NSString stringWithFormat:@"%tu", (unsigned long)status.batteryLevel],
+                                      [NSString stringWithFormat:@"%tu", (unsigned long)status.sleepTimeout]
+                                                ];
+                              CDVPluginResult* statusResult = [CDVPluginResult
+                                                               resultWithStatus:CDVCommandStatus_OK
+                                                               messageAsArray:result];
+
+
+                              [self.commandDelegate sendPluginResult:statusResult callbackId:_callbackId];
+                      });
+}
 
 - (void)reader:(ACRAudioJackReader *)reader didSendPiccAtr:(const uint8_t *)atr
         length:(NSUInteger)length {
@@ -222,19 +363,19 @@
                  //[_reader sleep];
          }];
 
-        dispatch_async(dispatch_get_main_queue(), ^{
-                               if (timedOut) {
-                               }
-                               else {
-                                       CDVPluginResult* result = [CDVPluginResult
-                                                                  resultWithStatus:CDVCommandStatus_OK
-                                                                  messageAsArray:@[resultString, atrResultString]];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+                              if (timedOut) {
+                              }
+                              else {
+                                      CDVPluginResult* result = [CDVPluginResult
+                                                                 resultWithStatus:CDVCommandStatus_OK
+                                                                 messageAsArray:@[resultString, atrResultString]];
 
 
-                                       [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
-                               }
+                                      [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+                              }
 
-                       });
+                      });
 
 
         [response setString:@""];
@@ -260,6 +401,48 @@
 
         return hexString;
 }
+
+- (NSString *)toBatteryLevelString:(NSUInteger)batteryLevel {
+
+        NSString *batteryLevelString = nil;
+
+        switch (batteryLevel) {
+        case 0:
+                batteryLevelString = @">= 3.00V";
+                break;
+        case 1:
+                batteryLevelString = @"2.90V - 2.99V";
+                break;
+        case 2:
+                batteryLevelString = @"2.80V - 2.89V";
+                break;
+        case 3:
+                batteryLevelString = @"2.70V - 2.79V";
+                break;
+        case 4:
+                batteryLevelString = @"2.60V - 2.69V";
+                break;
+        case 5:
+                batteryLevelString = @"2.50V - 2.59V";
+                break;
+        case 6:
+                batteryLevelString = @"2.40V - 2.49V";
+                break;
+        case 7:
+                batteryLevelString = @"2.30V - 2.39V";
+                break;
+        case 8:
+                batteryLevelString = @"< 2.30V";
+                break;
+        default:
+                batteryLevelString = @"Unknown";
+                break;
+        }
+
+        return batteryLevelString;
+}
+
+
 
 static void AJDAudioRouteChangeListener(void *inClientData, AudioSessionPropertyID inID, UInt32 inDataSize, const void *inData) {
 
