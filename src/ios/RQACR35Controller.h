@@ -8,4 +8,6 @@
 - (void) writeDataIntoTag:(CDVInvokedUrlCommand*)command;
 - (void) getDeviceStatus:(CDVInvokedUrlCommand*) command;
 - (void) getDeviceId:(CDVInvokedUrlCommand*) command;
+- (void) formatNdef:(CDVInvokedUrlCommand*) command;
+
 @end

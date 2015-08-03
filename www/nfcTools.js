@@ -3,14 +3,12 @@ module.exports = {
     acr35WriteDataIntoTag: function (data, successCallback, errorCallback) {
         var self = this;
         cordova.exec(function (p) {
-                if (p !== 'IGNORE') {
-                    successCallback.apply(self, arguments);
-                }
                 if (p === 'TIMEDOUT') {
                     errorCallback.apply(self, arguments);
-                }
-                if (p === 'NOTFOUND') {
+                } else if (p === 'NOTFOUND') {
                     errorCallback.apply(self, arguments);
+                } else if (p !== 'IGNORE') {
+                    successCallback.apply(self, arguments);
                 }
                 return true;
             },
@@ -19,17 +17,32 @@ module.exports = {
             "writeDataIntoTag", [data]
         );
     },
+    acr35FormatNdef: function (successCallback, errorCallback) {
+        var self = this;
+        cordova.exec(function (p) {
+                if (p === 'TIMEDOUT') {
+                    errorCallback.apply(self, arguments);
+                } else if (p === 'NOTFOUND') {
+                    errorCallback.apply(self, arguments);
+                } else if (p !== 'IGNORE') {
+                    successCallback.apply(self, arguments);
+                }
+                return true;
+            },
+            errorCallback,
+            "ACR35Controller",
+            "formatNdef", []
+        );
+    },
     acr35ReadDataFromTag: function (successCallback, errorCallback) {
         var self = this;
         cordova.exec(function (p) {
-                if (p !== 'IGNORE') {
-                    successCallback.apply(self, arguments);
-                }
                 if (p === 'TIMEDOUT') {
                     errorCallback.apply(self, arguments);
-                }
-                if (p === 'NOTFOUND') {
+                } else if (p === 'NOTFOUND') {
                     errorCallback.apply(self, arguments);
+                } else if (p !== 'IGNORE') {
+                    successCallback.apply(self, arguments);
                 }
                 return true;
             },
@@ -41,14 +54,12 @@ module.exports = {
     acr35ReadIdFromTag: function (successCallback, errorCallback) {
         var self = this;
         cordova.exec(function (p) {
-                if (p !== 'IGNORE') {
-                    successCallback.apply(self, arguments);
-                }
                 if (p === 'TIMEDOUT') {
                     errorCallback.apply(self, arguments);
-                }
-                if (p === 'NOTFOUND') {
+                } else if (p === 'NOTFOUND') {
                     errorCallback.apply(self, arguments);
+                } else if (p !== 'IGNORE') {
+                    successCallback.apply(self, arguments);
                 }
                 return true;
             },
@@ -60,14 +71,12 @@ module.exports = {
     acr35GetDeviceStatus: function (successCallback, errorCallback) {
         var self = this;
         cordova.exec(function (p) {
-                if (p !== 'IGNORE') {
-                    successCallback.apply(self, arguments);
-                }
                 if (p === 'TIMEDOUT') {
                     errorCallback.apply(self, arguments);
-                }
-                if (p === 'NOTFOUND') {
+                } else if (p === 'NOTFOUND') {
                     errorCallback.apply(self, arguments);
+                } else if (p !== 'IGNORE') {
+                    successCallback.apply(self, arguments);
                 }
                 return true;
             },
@@ -79,14 +88,12 @@ module.exports = {
     acr35GetDeviceId: function (successCallback, errorCallback) {
         var self = this;
         cordova.exec(function (p) {
-                if (p !== 'IGNORE') {
-                    successCallback.apply(self, arguments);
-                }
                 if (p === 'TIMEDOUT') {
                     errorCallback.apply(self, arguments);
-                }
-                if (p === 'NOTFOUND') {
+                } else if (p === 'NOTFOUND') {
                     errorCallback.apply(self, arguments);
+                } else if (p !== 'IGNORE') {
+                    successCallback.apply(self, arguments);
                 }
                 return true;
             },
@@ -95,17 +102,15 @@ module.exports = {
             "getDeviceId", []
         );
     },
-   isoDepReadIdFromTag: function (successCallback, errorCallback) {
+    isoDepReadIdFromTag: function (successCallback, errorCallback) {
         var self = this;
         cordova.exec(function (p) {
-                if (p !== 'IGNORE') {
-                    successCallback.apply(self, arguments);
-                }
                 if (p === 'TIMEDOUT') {
                     errorCallback.apply(self, arguments);
-                }
-                if (p === 'NOTFOUND') {
+                } else if (p === 'NOTFOUND') {
                     errorCallback.apply(self, arguments);
+                } else if (p !== 'IGNORE') {
+                    successCallback.apply(self, arguments);
                 }
                 return true;
             },

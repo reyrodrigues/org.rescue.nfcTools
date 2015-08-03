@@ -169,14 +169,60 @@
                                @"FF B0 00 08 10",
                                @"FF B0 00 09 10",
                                @"FF B0 00 0A 10",
+                               [NSString stringWithFormat:authCommand, @"0C"],
+                               @"FF B0 00 0C 10",
+                               @"FF B0 00 0D 10",
+                               @"FF B0 00 0E 10",
                                [NSString stringWithFormat:authCommand, @"10"],
                                @"FF B0 00 10 10",
                                @"FF B0 00 11 10",
+                               @"FF B0 00 12 10",
+                               [NSString stringWithFormat:authCommand, @"14"],
+                               @"FF B0 00 14 10",
+                               @"FF B0 00 15 10",
+                               @"FF B0 00 16 10",
+                               [NSString stringWithFormat:authCommand, @"18"],
+                               @"FF B0 00 18 10",
+                               @"FF B0 00 19 10",
+                               @"FF B0 00 1A 10",
+                               [NSString stringWithFormat:authCommand, @"1C"],
+                               @"FF B0 00 1C 10",
+                               @"FF B0 00 1D 10",
+                               @"FF B0 00 1E 10",
                                nil]];
 
 
         _callbackId = [command callbackId];
 
+
+        if(!_reader.mute) {
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"IGNORE"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        } else{
+                [timeoutTimer invalidate];
+
+                CDVPluginResult* result = [CDVPluginResult
+                                           resultWithStatus:CDVCommandStatus_OK
+                                           messageAsString:@"NOTFOUND"];
+                [result setKeepCallback :[NSNumber numberWithBool:YES]];
+                [self.commandDelegate sendPluginResult:result callbackId:_callbackId];
+        }
+}
+
+-(void)formatNdef:(CDVInvokedUrlCommand *)command {
+
+        NSString* key = [self prepareKey:command];
+        NSString* headerCommand = @"FF D6 00 01 30 14 01 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1 03 E1";
+
+        [self executeCommands:[NSArray arrayWithObjects:key,
+                               [NSString stringWithFormat:authCommand, @"01"],
+                               headerCommand,
+                               nil]];
+
+        _callbackId = [command callbackId];
 
         if(!_reader.mute) {
                 CDVPluginResult* result = [CDVPluginResult
@@ -201,22 +247,34 @@
         NSString* key = [self prepareKey:command];
         NSData*  immutableData = [AJDHex byteArrayFromHexString:[[command arguments] objectAtIndex:0]];
         NSMutableData* data = [NSMutableData dataWithData:immutableData];
-        if([data length] <128) {
-                [data increaseLengthBy:128 - [data length]];
+        if([data length] <336) {
+                [data increaseLengthBy:336 - [data length]];
         }
         NSString * hexTag =[AJDHex hexStringFromByteArray:data];
         hexTag = [hexTag stringByReplacingOccurrencesOfString:@" " withString:@""];
         NSString * commandString1 =[@"FF D6 00 04 30 " stringByAppendingString :[hexTag substringWithRange:NSMakeRange(0, 96)]];
         NSString * commandString2 =[@"FF D6 00 08 30 " stringByAppendingString :[hexTag substringWithRange:NSMakeRange(96, 96)]];
-        NSString * commandString3 =[@"FF D6 00 10 20 " stringByAppendingString :[hexTag substringWithRange:NSMakeRange(96*2, 64)]];
+        NSString * commandString3 =[@"FF D6 00 0C 30 " stringByAppendingString :[hexTag substringWithRange:NSMakeRange(96*2, 96)]];
+        NSString * commandString4 =[@"FF D6 00 10 30 " stringByAppendingString :[hexTag substringWithRange:NSMakeRange(96*3, 96)]];
+        NSString * commandString5 =[@"FF D6 00 14 30 " stringByAppendingString :[hexTag substringWithRange:NSMakeRange(96*4, 96)]];
+        NSString * commandString6 =[@"FF D6 00 18 30 " stringByAppendingString :[hexTag substringWithRange:NSMakeRange(96*5, 96)]];
+        NSString * commandString7 =[@"FF D6 00 1C 30 " stringByAppendingString :[hexTag substringWithRange:NSMakeRange(96*6, 96)]];
 
         [self executeCommands:[NSArray arrayWithObjects:key,
                                [NSString stringWithFormat:authCommand, @"04"],
                                commandString1,
                                [NSString stringWithFormat:authCommand, @"08"],
                                commandString2,
-                               [NSString stringWithFormat:authCommand, @"10"],
+                               [NSString stringWithFormat:authCommand, @"0C"],
                                commandString3,
+                               [NSString stringWithFormat:authCommand, @"10"],
+                               commandString4,
+                               [NSString stringWithFormat:authCommand, @"14"],
+                               commandString5,
+                               [NSString stringWithFormat:authCommand, @"18"],
+                               commandString6,
+                               [NSString stringWithFormat:authCommand, @"1C"],
+                               commandString7,
                                nil]];
 
 
